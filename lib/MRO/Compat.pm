@@ -274,7 +274,7 @@ sub __is_universal {
     my $classname = shift;
     die "mro::is_universal requires a classname" if !$classname;
 
-    my $lin = __get_linear_isa($classname);
+    my $lin = __get_linear_isa('UNIVERSAL');
     foreach (@$lin) {
         return 1 if $classname eq $_;
     }
