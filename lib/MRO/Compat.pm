@@ -1,21 +1,16 @@
 package MRO::Compat;
 use strict;
 use warnings;
+require 5.006_000;
 
 our $VERSION = '0.01';
 
-# Is Class::C3 installed locally?
-our $C3_INSTALLED;
-
 BEGIN {
-    # Don't do anything if 5.9.5+
+    # Alias our private functions over to
+    # the mro:: namespace and load
+    # Class::C3 if Perl < 5.9.5
     if($] < 5.009_005) {
-        # Find out if we have Class::C3 at all
-        eval { require Class::C3 };
-        $C3_INSTALLED = 1 if !$@;
-
-        # Alias our private functions over to
-        # the mro:: namespace
+        require Class::C3;
         *mro::import            = \&__import;
         *mro::get_linear_isa    = \&__get_linear_isa;
         *mro::set_mro           = \&__set_mro;
@@ -25,6 +20,14 @@ BEGIN {
         *mro::method_changed_in = \&__method_changed_in;
         *mro::invalidate_all_method_caches
                                 = \&__invalidate_all_method_caches;
+    }
+
+    # Provide no-op Class::C3::.*initialize() funcs for 5.9.5+
+    else {
+        no warnings 'redefine';
+        *Class::C3::initialize = sub { 1 };
+        *Class::C3::reinitialize = sub { 1 };
+        *Class::C3::uninitialize = sub { 1 };
     }
 }
 
@@ -53,12 +56,13 @@ with method resolution order and method caching in general
 in Perl 5.9.5 and higher.
 
 This module provides a subset of those interfaces for
-earlier versions of Perl.  It is a harmless no-op to use
-it on 5.9.5+.  If you're writing a piece of software
-that would like to use the parts of 5.9.5+'s mro::
-interfaces that are supported here, and you want
-compatibility with older Perls, this is the module
-for you.
+earlier versions of Perl (back to 5.6.0 anyways).
+
+It is a harmless no-op to use it on 5.9.5+.  If you're
+writing a piece of software that would like to use the
+parts of 5.9.5+'s mro:: interfaces that are supported
+here, and you want compatibility with older Perls, this
+is the module for you.
 
 This module never exports any functions.  All calls must
 be fully qualified with the C<mro::> prefix.
@@ -75,11 +79,6 @@ The linearized MRO of a class is a single ordered list of all of the
 classes that would be visited in the process of resolving a method
 on the given class, starting with itself.  It does not include any
 duplicate entries.
-
-On pre-5.9.5 Perls with MRO::Compat, explicitly asking for the C<c3>
-MRO of a class will die if L<Class::C3> is not installed.  If
-L<Class::C3> is installed, it will detect C3 classes and return the
-correct C3 MRO unless explicitly asked to return the C<dfs> MRO.
 
 Note that C<UNIVERSAL> (and any members of C<UNIVERSAL>'s MRO) are not
 part of the MRO of a class, even though all classes implicitly inherit
@@ -121,37 +120,64 @@ sub __get_linear_isa {
 
 =head2 mro::import
 
-Not supported, and hence 5.9.5's "use mro 'foo'" is also not supported.
-These will die if used on pre-5.9.5 Perls.
+This allows the C<use mro 'dfs'> and
+C<use mro 'c3'> syntaxes, providing you
+L<use MRO::Compat> first.  Please see the
+L</USING C3> section for additional details.
 
 =cut
 
 sub __import {
-    die q{The "use mro 'foo'" is only supported on Perl 5.9.5+};
+    if($_[1]) {
+        goto &Class::C3::import if $_[1] eq 'c3';
+        __set_mro(scalar(caller), $_[1]);
+    }
 }
 
 =head2 mro::set_mro($classname, $type)
 
-Not supported, will die if used on pre-5.9.5 Perls.
+Sets the mro of C<$classname> to one of the types
+C<dfs> or C<c3>.  Please see the L</USING C3>
+section for additional details.
 
 =cut
 
 sub __set_mro {
-    die q{mro::set_mro() is only supported on Perl 5.9.5+};
+    my ($classname, $type) = @_;
+    if(!$classname || !$type) {
+        die q{Usage: mro::set_mro($classname, $type)};
+    }
+    if($type eq 'c3') {
+        eval "package $classname; use Class::C3";
+        die $@ if $@;
+    }
+    if($type ne 'dfs') {
+        die q{Invalid mro type "$type"};
+    }
+
+    # In the dfs case, check whether we need to
+    #  undo C3
+    if(defined $Class::C3::MRO{$classname}) {
+        Class::C3::_remove_method_dispatch_table($classname);
+    }
+    delete $Class::C3::MRO{$classname};
+
+    return;
 }
 
 =head2 mro::get_mro($classname)
 
 Returns the MRO of the given class (either C<c3> or C<dfs>).
 
+It considers any Class::C3-using class to have C3 MRO
+even before L<Class::C3::initialize()> is called.
+
 =cut
 
 sub __get_mro {
     my $classname = shift;
     die "mro::get_mro requires a classname" if !$classname;
-    if($C3_INSTALLED && exists $Class::C3::MRO{$classname}) {
-        return 'c3';
-    }
+    return 'c3' if exists $Class::C3::MRO{$classname};
     return 'dfs';
 }
 
@@ -161,6 +187,9 @@ Not supported, will die if used on pre-5.9.5 Perls.
 
 =cut
 
+# In theory this could be made to work, but it would
+#  be an insanely slow algorithm if any reasonably large
+#  number of modules were loaded.
 sub __get_isarev {
     die "mro::get_isarev() is only supported on Perl 5.9.5+";
 }
@@ -219,6 +248,24 @@ sub __method_changed_in {
 
     __invalidate_all_method_caches();
 }
+
+=head1 USING C3
+
+While this module makes the 5.9.5+ syntaxes
+C<use mro 'c3'> and C<mro::set_mro("Foo", 'c3')> available
+on older Perls, it does so merely by passing off the work
+to L<Class::C3>.
+
+It does not remove the need for you to call
+L<Class::C3>'s C<initialize()>, C<reinitialize()>, and/or
+C<uninitialize()> at the appropriate times
+as documented in the L<Class::C3> docs.
+
+Because L<MRO::Compat> has L<Class::C3> as a pre-requisite,
+and requires it at C<use> time, you can blindly call
+those functions in code that uses L<MRO::Compat>.
+Under 5.9.5+ with L<MRO::Compat>, your calls to those
+functions will become a no-op and everything will work fine.
 
 =head1 SEE ALSO
 
