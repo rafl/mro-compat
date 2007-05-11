@@ -87,7 +87,36 @@ methods from C<UNIVERSAL> and its parents.
 
 =cut
 
+sub __get_linear_isa_dfs {
+    no strict 'refs';
+
+    my $classname = shift;
+
+    my @lin = ($classname);
+    my %stored;
+    foreach my $parent (@{"$classname\::ISA"}) {
+        my $plin = __get_linear_isa_dfs($parent);
+        foreach (@$plin) {
+            next if exists $stored{$_};
+            push(@lin, $_);
+            $stored{$_} = 1;
+        }
+    }
+    return \@lin;
+}
+
 sub __get_linear_isa {
+    my ($classname, $type) = @_;
+    die "mro::get_mro requires a classname" if !$classname;
+
+    $type ||= __get_mro($classname);
+    if($type eq 'dfs') {
+        return __get_linear_isa_dfs($classname);
+    }
+    elsif($type eq 'c3') {
+        return [Class::C3::calculateMRO($classname)];
+    }
+    die "type argument must be 'dfs' or 'c3'";
 }
 
 =head2 mro::import
@@ -118,10 +147,9 @@ Returns the MRO of the given class (either C<c3> or C<dfs>).
 =cut
 
 sub __get_mro {
-    my $classname = shift
+    my $classname = shift;
     die "mro::get_mro requires a classname" if !$classname;
-    if($C3_INSTALLED && exists $Class::C3::MRO{$classname}
-       && $Class::C3::_initialized) {
+    if($C3_INSTALLED && exists $Class::C3::MRO{$classname}) {
         return 'c3';
     }
     return 'dfs';
