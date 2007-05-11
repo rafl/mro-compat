@@ -40,7 +40,10 @@ is_deeply(
   "get_linear_isa for GGG3",
 );
 
-is(FFF3->testsub(), 'FFF3_first_in_dfs', 'dfs resolution pre-init');
+SKIP: {
+    skip "Does not work like this on 5.9.5+", 1 if $] > 5.009_004;
+    is(FFF3->testsub(), 'FFF3_first_in_dfs', 'dfs resolution pre-init');
+}
 
 Class::C3::initialize();
 

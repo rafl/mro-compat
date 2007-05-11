@@ -5,7 +5,7 @@ require 5.006_000;
 
 # Keep this < 1.00, so people can tell the fake
 #  mro.pm from the real one
-our $VERSION = '0.01';
+our $VERSION = '0.01_01';
 
 BEGIN {
     # Alias our private functions over to
@@ -70,6 +70,13 @@ is the module for you.
 
 This module never exports any functions.  All calls must
 be fully qualified with the C<mro::> prefix.
+
+=head1 VERSION 0.01_01
+
+This is the first dev release of this new module, and on top of that,
+the Perl 5.9.5 it seeks to provide compatibility with isn't even
+out yet.  Consider it not fully stabilized for the time being.
+These interfaces are not necessarily nailed down yet.
 
 =head1 Functions
 
