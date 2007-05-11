@@ -255,7 +255,7 @@ sub __get_isarev {
     my $classname = shift;
     die "mro::get_isarev requires a classname" if !$classname;
 
-    sort @{__get_isarev_recurse($classname, __get_all_pkgs_with_isas(), 0)};
+    @{__get_isarev_recurse($classname, __get_all_pkgs_with_isas(), 0)};
 }
 
 =head2 mro::is_universal($classname)
