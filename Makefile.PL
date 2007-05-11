@@ -1,6 +1,6 @@
 use inc::Module::Install;
 
-name           '';
+name           'mro';
 all_from       'lib/mro.pm';
 
 build_requires 'Test::More'    => '0.47';
