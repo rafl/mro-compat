@@ -1,4 +1,4 @@
-mro version 0.01
+MRO::Compat version 0.01
 ===========================
 
 INSTALLATION
@@ -13,12 +13,6 @@ To install this module type the following:
 DEPENDENCIES
 
    Requires Test::More 0.47 to test
-
-IMPORTANT INFORMATION
-
-   This module is only for use on Perls earlier than 5.9.5.
-   Perl version 5.9.5 and higher includes its own superior
-   implementation, with a version number greater than 1.00.
 
 COPYRIGHT AND LICENCE
 
