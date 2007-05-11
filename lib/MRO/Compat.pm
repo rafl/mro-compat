@@ -3,6 +3,8 @@ use strict;
 use warnings;
 require 5.006_000;
 
+# Keep this < 1.00, so people can tell the fake
+#  mro.pm from the real one
 our $VERSION = '0.01';
 
 BEGIN {
@@ -20,6 +22,8 @@ BEGIN {
         *mro::method_changed_in = \&__method_changed_in;
         *mro::invalidate_all_method_caches
                                 = \&__invalidate_all_method_caches;
+        $mro::VERSION = $VERSION;
+        $INC{'mro.pm'} = 'Faked by MRO::Compat';
     }
 
     # Provide no-op Class::C3::.*initialize() funcs for 5.9.5+
@@ -155,8 +159,7 @@ sub __set_mro {
         die q{Invalid mro type "$type"};
     }
 
-    # In the dfs case, check whether we need to
-    #  undo C3
+    # In the dfs case, check whether we need to undo C3
     if(defined $Class::C3::MRO{$classname}) {
         Class::C3::_remove_method_dispatch_table($classname);
     }
