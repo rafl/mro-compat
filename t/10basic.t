@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 2;
+use Test::More tests => 5;
 
 BEGIN {
     use_ok('MRO::Compat');
@@ -21,4 +21,19 @@ BEGIN {
 is_deeply(
   mro::get_linear_isa('GGG'),
   [ 'GGG', 'FFF', 'EEE', 'BBB', 'AAA', 'CCC', 'DDD' ]
+);
+
+is_deeply(
+  [mro::get_isarev('GGG')],
+  [],
+);
+
+is_deeply(
+  [mro::get_isarev('DDD')],
+  [ 'EEE', 'FFF', 'GGG' ],
+);
+
+is_deeply(
+  [mro::get_isarev('AAA')],
+  [ 'BBB', 'CCC', 'DDD', 'EEE', 'FFF', 'GGG' ],
 );

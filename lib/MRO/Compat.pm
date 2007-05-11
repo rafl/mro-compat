@@ -33,7 +33,7 @@ BEGIN {
 
 =head1 NAME
 
-MRO::Compat - Partial mro::* interface compatibility for Perls < 5.9.5
+MRO::Compat - mro::* interface compatibility for Perls < 5.9.5
 
 =head1 SYNOPSIS
 
@@ -55,12 +55,12 @@ The "mro" namespace provides several utilities for dealing
 with method resolution order and method caching in general
 in Perl 5.9.5 and higher.
 
-This module provides a subset of those interfaces for
+This module provides those interfaces for
 earlier versions of Perl (back to 5.6.0 anyways).
 
-It is a harmless no-op to use it on 5.9.5+.  If you're
-writing a piece of software that would like to use the
-parts of 5.9.5+'s mro:: interfaces that are supported
+It is a harmless no-op to use this module on 5.9.5+.  If
+you're writing a piece of software that would like to use
+the parts of 5.9.5+'s mro:: interfaces that are supported
 here, and you want compatibility with older Perls, this
 is the module for you.
 
@@ -183,15 +183,79 @@ sub __get_mro {
 
 =head2 mro::get_isarev($classname)
 
-Not supported, will die if used on pre-5.9.5 Perls.
+Returns an array of classes who are subclasses of the
+given classname.  In other words, classes who we exists,
+however indirectly, in the @ISA inheritancy hierarchy of.
+
+This is much slower on pre-5.9.5 Perls with MRO::Compat
+than it is on 5.9.5+, as it has to search the entire
+package namespace.
 
 =cut
 
-# In theory this could be made to work, but it would
-#  be an insanely slow algorithm if any reasonably large
-#  number of modules were loaded.
+sub __get_all_pkgs_with_isas {
+    no strict 'refs';
+    no warnings 'recursion';
+
+    my @retval;
+
+    my $search = shift;
+    my $pfx;
+    my $isa;
+    if($search) {
+        $isa = \@{"$search\::ISA"};
+        $pfx = "$search\::";
+    }
+    else {
+        $search = 'main';
+        $isa = \@main::ISA;
+        $pfx = '';
+    }
+
+    push(@retval, $search) if scalar(@$isa);
+
+    foreach my $cand (keys %{"$search\::"}) {
+        if($cand =~ /::$/) {
+            $cand =~ s/::$//;
+            next if $cand eq $search; # skip self-reference (main?)
+            push(@retval, @{__get_all_pkgs_with_isas($pfx . $cand)});
+        }
+    }
+
+    return \@retval;
+}
+
+sub __get_isarev_recurse {
+    no strict 'refs';
+
+    my ($class, $all_isas, $level) = @_;
+
+    die "Recursive inheritance detected" if $level > 100;
+
+    my %retval;
+
+    foreach my $cand (@$all_isas) {
+        my $found_me;
+        foreach (@{"$cand\::ISA"}) {
+            if($_ eq $class) {
+                $found_me = 1;
+                last;
+            }
+        }
+        if($found_me) {
+            $retval{$cand} = 1;
+            map { $retval{$_} = 1 }
+                @{__get_isarev_recurse($cand, $all_isas, $level+1)};
+        }
+    }
+    return [keys %retval];
+}
+
 sub __get_isarev {
-    die "mro::get_isarev() is only supported on Perl 5.9.5+";
+    my $classname = shift;
+    die "mro::get_isarev requires a classname" if !$classname;
+
+    sort @{__get_isarev_recurse($classname, __get_all_pkgs_with_isas(), 0)};
 }
 
 =head2 mro::is_universal($classname)
