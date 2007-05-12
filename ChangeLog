@@ -1,4 +1,12 @@
 Revision history for Perl extension MRO::Compat.
 
+0.02 - Sat May 12, 2007
+    - Added mro::get_pkg_gen (which optionally works
+      even faster with Class::C3::XS 0.04) in
+      anticipation of it being added to 5.9.5
+    - Changed mro::get_isarev to return arrayref in
+      anticipation of that change in 5.9.5
+    - Bumped requirements, added more docs
+
 0.01_01 - Fri May 11, 2007
     - Initial dev release

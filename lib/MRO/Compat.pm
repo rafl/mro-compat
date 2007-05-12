@@ -5,14 +5,15 @@ require 5.006_000;
 
 # Keep this < 1.00, so people can tell the fake
 #  mro.pm from the real one
-our $VERSION = '0.01_01';
+our $VERSION = '0.02';
 
 BEGIN {
     # Alias our private functions over to
     # the mro:: namespace and load
     # Class::C3 if Perl < 5.9.5
     if($] < 5.009_005) {
-        require Class::C3;
+        $mro::VERSION = $VERSION;
+        $INC{'mro.pm'} = 'Faked by MRO::Compat';
         *mro::import            = \&__import;
         *mro::get_linear_isa    = \&__get_linear_isa;
         *mro::set_mro           = \&__set_mro;
@@ -22,8 +23,13 @@ BEGIN {
         *mro::method_changed_in = \&__method_changed_in;
         *mro::invalidate_all_method_caches
                                 = \&__invalidate_all_method_caches;
-        $mro::VERSION = $VERSION;
-        $INC{'mro.pm'} = 'Faked by MRO::Compat';
+        require Class::C3;
+        if($Class::C3::XS::VERSION && $Class::C3::XS::VERSION > 0.03) {
+            *mro::get_pkg_gen   = \&__get_pkg_gen_c3xs;
+        }
+        else {
+            *mro::get_pkg_gen   = \&__get_pkg_gen_pp;
+        }
     }
 
     # Provide no-op Class::C3::.*initialize() funcs for 5.9.5+
@@ -68,15 +74,30 @@ the parts of 5.9.5+'s mro:: interfaces that are supported
 here, and you want compatibility with older Perls, this
 is the module for you.
 
+Some parts of this interface will work better with
+L<Class::C3::XS> installed, but it's not a requirement.
+
 This module never exports any functions.  All calls must
 be fully qualified with the C<mro::> prefix.
 
-=head1 VERSION 0.01_01
+The interface documentation here serves only as a quick
+reference of what the function basically does, and what
+differences between L<MRO::Compat> and 5.9.5+ one should
+look out for.  The main docs in 5.9.5's L<mro> are the real
+interface docs, and contain a lot of other useful information.
 
-This is the first dev release of this new module, and on top of that,
+=head1 VERSION 0.02
+
+This is the first release of this new module, and on top of that,
 the Perl 5.9.5 it seeks to provide compatibility with isn't even
-out yet.  Consider it not fully stabilized for the time being.
-These interfaces are not necessarily nailed down yet.
+out yet.
+
+If you're going to use/depend on this, please keep abreast of
+possible interface changes in the next few versions.  Once Perl
+5.9.5 is out the door the interfaces should stabilize on whatever
+5.9.5 has to offer.  In the meantime, don't be surprised if
+L<MRO::Compat> and 5.9.5's interfaces aren't perfectly in sync
+at all times.
 
 =head1 Functions
 
@@ -193,8 +214,8 @@ sub __get_mro {
 
 =head2 mro::get_isarev($classname)
 
-Returns an array of classes who are subclasses of the
-given classname.  In other words, classes who we exists,
+Returns an arrayref of classes who are subclasses of the
+given classname.  In other words, classes who we exist,
 however indirectly, in the @ISA inheritancy hierarchy of.
 
 This is much slower on pre-5.9.5 Perls with MRO::Compat
@@ -265,7 +286,7 @@ sub __get_isarev {
     my $classname = shift;
     die "mro::get_isarev requires a classname" if !$classname;
 
-    @{__get_isarev_recurse($classname, __get_all_pkgs_with_isas(), 0)};
+    __get_isarev_recurse($classname, __get_all_pkgs_with_isas(), 0);
 }
 
 =head2 mro::is_universal($classname)
@@ -297,6 +318,10 @@ sub __is_universal {
 Increments C<PL_sub_generation>, which invalidates method
 caching in all packages.
 
+Please note that this is rarely necessary, unless you are
+dealing with a situation which is known to confuse Perl's
+method caching.
+
 =cut
 
 sub __invalidate_all_method_caches {
@@ -314,6 +339,10 @@ pre-5.9.5 Perls have no other way to do this.  It will still
 enforce the requirement that you pass it a classname, for
 compatibility.
 
+Please note that this is rarely necessary, unless you are
+dealing with a situation which is known to confuse Perl's
+method caching.
+
 =cut
 
 sub __method_changed_in {
@@ -321,6 +350,29 @@ sub __method_changed_in {
     die "mro::method_changed_in requires a classname" if !$classname;
 
     __invalidate_all_method_caches();
+}
+
+=head2 mro::get_pkg_gen($classname)
+
+Returns an integer which is incremented every time a local
+method of or the C<@ISA> of the given package changes on
+Perl 5.9.5+.  On earlier Perls with this L<MRO::Compat> module,
+it will probably increment a lot more often than necessary.
+
+=cut
+
+my $__pkg_gen = 2;
+sub __get_pkg_gen_pp {
+    my $classname = shift;
+    die "mro::get_pkg_gen requires a classname" if !$classname;
+    return $__pkg_gen++;
+}
+
+sub __get_pkg_gen_c3xs {
+    my $classname = shift;
+    die "mro::get_pkg_gen requires a classname" if !$classname;
+
+    return Class::C3::XS::_plsubgen();
 }
 
 =head1 USING C3

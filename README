@@ -1,4 +1,4 @@
-MRO::Compat version 0.01
+MRO::Compat version 0.02
 ===========================
 
 INSTALLATION
@@ -13,6 +13,8 @@ To install this module type the following:
 DEPENDENCIES
 
    Requires Test::More 0.47 to test
+   Requires Class::C3 0.18 for runtime
+   Recommends Class::C3::XS 0.04 for runtime
 
 COPYRIGHT AND LICENCE
 

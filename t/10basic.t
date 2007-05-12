@@ -26,20 +26,20 @@ is_deeply(
 );
 
 is_deeply(
-  [sort (mro::get_isarev('GGG'))],
+  [sort @{mro::get_isarev('GGG')}],
   [],
   "get_isarev for GGG",
 );
 
 is_deeply(
-  [sort (mro::get_isarev('DDD'))],
+  [sort @{mro::get_isarev('DDD')}],
   [ 'EEE', 'FFF', 'GGG', 'UNIVERSAL' ],
   "get_isarev for DDD",
 );
 
 
 is_deeply(
-  [sort (mro::get_isarev('AAA'))],
+  [sort @{mro::get_isarev('AAA')}],
   [ 'BBB', 'CCC', 'DDD', 'EEE', 'FFF', 'GGG', 'UNIVERSAL' ],
   "get_isarev for AAA",
 );
