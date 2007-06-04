@@ -1,5 +1,9 @@
 Revision history for Perl extension MRO::Compat.
 
+0.03 - Mon Jun 4, 2007
+    - Bumped C3 requirements
+    - Loads mro.pm on 5.9.5+
+
 0.02 - Sat May 12, 2007
     - Added mro::get_pkg_gen (which optionally works
       even faster with Class::C3::XS 0.04) in

@@ -5,14 +5,15 @@ require 5.006_000;
 
 # Keep this < 1.00, so people can tell the fake
 #  mro.pm from the real one
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 BEGIN {
     # Alias our private functions over to
     # the mro:: namespace and load
     # Class::C3 if Perl < 5.9.5
     if($] < 5.009_005) {
-        $mro::VERSION = $VERSION;
+        $mro::VERSION # to fool Module::Install when generating META.yml
+            = $VERSION;
         $INC{'mro.pm'} = 'Faked by MRO::Compat';
         *mro::import            = \&__import;
         *mro::get_linear_isa    = \&__get_linear_isa;
