@@ -32,8 +32,9 @@ BEGIN {
         }
     }
 
-    # Provide no-op Class::C3::.*initialize() funcs for 5.9.5+
+    # Load mro.pm and provide no-op Class::C3::.*initialize() funcs for 5.9.5+
     else {
+        require mro;
         no warnings 'redefine';
         *Class::C3::initialize = sub { 1 };
         *Class::C3::reinitialize = sub { 1 };
