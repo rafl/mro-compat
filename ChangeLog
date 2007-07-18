@@ -1,5 +1,11 @@
 Revision history for Perl extension MRO::Compat.
 
+0.04 - Wed July 18, 2007
+    - Removed doc warning now that 5.9.5 is out
+    - Stopped the code from assuming valid classnames
+      are true in boolean context
+    - Misc small tweaks
+
 0.03 - Mon Jun 4, 2007
     - Bumped C3 requirements
     - Loads mro.pm on 5.9.5+

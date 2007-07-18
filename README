@@ -21,13 +21,17 @@ DESCRIPTION
     This module provides those interfaces for earlier versions of Perl (back
     to 5.6.0 anyways).
 
-    It is a harmless no-op to use this module on 5.9.5+. If you're writing a
-    piece of software that would like to use the parts of 5.9.5+'s mro::
-    interfaces that are supported here, and you want compatibility with
-    older Perls, this is the module for you.
+    It is a harmless no-op to use this module on 5.9.5+. That is to say,
+    code which properly uses MRO::Compat will work unmodified on both older
+    Perls and 5.9.5+.
 
-    Some parts of this interface will work better with Class::C3::XS
-    installed, but it's not a requirement.
+    If you're writing a piece of software that would like to use the parts
+    of 5.9.5+'s mro:: interfaces that are supported here, and you want
+    compatibility with older Perls, this is the module for you.
+
+    Some parts of this code will work better and/or faster with
+    Class::C3::XS installed (which is an optional prereq of Class::C3, which
+    is in turn a prereq of this package), but it's not a requirement.
 
     This module never exports any functions. All calls must be fully
     qualified with the "mro::" prefix.
@@ -37,16 +41,6 @@ DESCRIPTION
     MRO::Compat and 5.9.5+ one should look out for. The main docs in 5.9.5's
     mro are the real interface docs, and contain a lot of other useful
     information.
-
-VERSION 0.02
-    This is the first release of this new module, and on top of that, the
-    Perl 5.9.5 it seeks to provide compatibility with isn't even out yet.
-
-    If you're going to use/depend on this, please keep abreast of possible
-    interface changes in the next few versions. Once Perl 5.9.5 is out the
-    door the interfaces should stabilize on whatever 5.9.5 has to offer. In
-    the meantime, don't be surprised if MRO::Compat and 5.9.5's interfaces
-    aren't perfectly in sync at all times.
 
 Functions
   mro::get_linear_isa($classname[, $type])
@@ -122,14 +116,11 @@ USING C3
     "mro::set_mro("Foo", 'c3')" available on older Perls, it does so merely
     by passing off the work to Class::C3.
 
-    It does not remove the need for you to call Class::C3's "initialize()",
-    "reinitialize()", and/or "uninitialize()" at the appropriate times as
-    documented in the Class::C3 docs.
-
-    Because MRO::Compat has Class::C3 as a pre-requisite, and requires it at
-    "use" time, you can blindly call those functions in code that uses
-    MRO::Compat. Under 5.9.5+ with MRO::Compat, your calls to those
-    functions will become a no-op and everything will work fine.
+    It does not remove the need for you to call "Class::C3::initialize()",
+    "Class::C3::reinitialize()", and/or "Class::C3::uninitialize()" at the
+    appropriate times as documented in the Class::C3 docs. These three
+    functions are always provided by MRO::Compat, either via Class::C3
+    itself on older Perls, or directly as no-ops on 5.9.5+.
 
 SEE ALSO
     Class::C3

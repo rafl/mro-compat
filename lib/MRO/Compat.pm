@@ -5,7 +5,7 @@ require 5.006_000;
 
 # Keep this < 1.00, so people can tell the fake
 #  mro.pm from the real one
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 BEGIN {
     # Alias our private functions over to
@@ -70,14 +70,19 @@ in Perl 5.9.5 and higher.
 This module provides those interfaces for
 earlier versions of Perl (back to 5.6.0 anyways).
 
-It is a harmless no-op to use this module on 5.9.5+.  If
-you're writing a piece of software that would like to use
+It is a harmless no-op to use this module on 5.9.5+.  That
+is to say, code which properly uses L<MRO::Compat> will work
+unmodified on both older Perls and 5.9.5+.
+
+If you're writing a piece of software that would like to use
 the parts of 5.9.5+'s mro:: interfaces that are supported
 here, and you want compatibility with older Perls, this
 is the module for you.
 
-Some parts of this interface will work better with
-L<Class::C3::XS> installed, but it's not a requirement.
+Some parts of this code will work better and/or faster with
+L<Class::C3::XS> installed (which is an optional prereq
+of L<Class::C3>, which is in turn a prereq of this
+package), but it's not a requirement.
 
 This module never exports any functions.  All calls must
 be fully qualified with the C<mro::> prefix.
@@ -87,19 +92,6 @@ reference of what the function basically does, and what
 differences between L<MRO::Compat> and 5.9.5+ one should
 look out for.  The main docs in 5.9.5's L<mro> are the real
 interface docs, and contain a lot of other useful information.
-
-=head1 VERSION 0.02
-
-This is the first release of this new module, and on top of that,
-the Perl 5.9.5 it seeks to provide compatibility with isn't even
-out yet.
-
-If you're going to use/depend on this, please keep abreast of
-possible interface changes in the next few versions.  Once Perl
-5.9.5 is out the door the interfaces should stabilize on whatever
-5.9.5 has to offer.  In the meantime, don't be surprised if
-L<MRO::Compat> and 5.9.5's interfaces aren't perfectly in sync
-at all times.
 
 =head1 Functions
 
@@ -140,7 +132,7 @@ sub __get_linear_isa_dfs {
 
 sub __get_linear_isa {
     my ($classname, $type) = @_;
-    die "mro::get_mro requires a classname" if !$classname;
+    die "mro::get_mro requires a classname" if !defined $classname;
 
     $type ||= __get_mro($classname);
     if($type eq 'dfs') {
@@ -178,7 +170,7 @@ section for additional details.
 
 sub __set_mro {
     my ($classname, $type) = @_;
-    if(!$classname || !$type) {
+    if(!defined $classname || !$type) {
         die q{Usage: mro::set_mro($classname, $type)};
     }
     if($type eq 'c3') {
@@ -209,7 +201,7 @@ even before L<Class::C3::initialize()> is called.
 
 sub __get_mro {
     my $classname = shift;
-    die "mro::get_mro requires a classname" if !$classname;
+    die "mro::get_mro requires a classname" if !defined $classname;
     return 'c3' if exists $Class::C3::MRO{$classname};
     return 'dfs';
 }
@@ -248,8 +240,7 @@ sub __get_all_pkgs_with_isas {
     push(@retval, $search) if scalar(@$isa);
 
     foreach my $cand (keys %{"$search\::"}) {
-        if($cand =~ /::$/) {
-            $cand =~ s/::$//;
+        if($cand =~ s/::$//) {
             next if $cand eq $search; # skip self-reference (main?)
             push(@retval, @{__get_all_pkgs_with_isas($pfx . $cand)});
         }
@@ -286,7 +277,7 @@ sub __get_isarev_recurse {
 
 sub __get_isarev {
     my $classname = shift;
-    die "mro::get_isarev requires a classname" if !$classname;
+    die "mro::get_isarev requires a classname" if !defined $classname;
 
     __get_isarev_recurse($classname, __get_all_pkgs_with_isas(), 0);
 }
@@ -305,7 +296,7 @@ inherit methods from it.
 
 sub __is_universal {
     my $classname = shift;
-    die "mro::is_universal requires a classname" if !$classname;
+    die "mro::is_universal requires a classname" if !defined $classname;
 
     my $lin = __get_linear_isa('UNIVERSAL');
     foreach (@$lin) {
@@ -328,7 +319,7 @@ method caching.
 
 sub __invalidate_all_method_caches {
     # Super secret mystery code :)
-    @fedcba98::ISA = @fedcba98::ISA;
+    @f845a9c1ac41be33::ISA = @f845a9c1ac41be33::ISA;
     return;
 }
 
@@ -349,7 +340,7 @@ method caching.
 
 sub __method_changed_in {
     my $classname = shift;
-    die "mro::method_changed_in requires a classname" if !$classname;
+    die "mro::method_changed_in requires a classname" if !defined $classname;
 
     __invalidate_all_method_caches();
 }
@@ -363,16 +354,18 @@ it will probably increment a lot more often than necessary.
 
 =cut
 
-my $__pkg_gen = 2;
-sub __get_pkg_gen_pp {
-    my $classname = shift;
-    die "mro::get_pkg_gen requires a classname" if !$classname;
-    return $__pkg_gen++;
+{
+    my $__pkg_gen = 2;
+    sub __get_pkg_gen_pp {
+        my $classname = shift;
+        die "mro::get_pkg_gen requires a classname" if !defined $classname;
+        return $__pkg_gen++;
+    }
 }
 
 sub __get_pkg_gen_c3xs {
     my $classname = shift;
-    die "mro::get_pkg_gen requires a classname" if !$classname;
+    die "mro::get_pkg_gen requires a classname" if !defined $classname;
 
     return Class::C3::XS::_plsubgen();
 }
@@ -385,15 +378,11 @@ on older Perls, it does so merely by passing off the work
 to L<Class::C3>.
 
 It does not remove the need for you to call
-L<Class::C3>'s C<initialize()>, C<reinitialize()>, and/or
-C<uninitialize()> at the appropriate times
-as documented in the L<Class::C3> docs.
-
-Because L<MRO::Compat> has L<Class::C3> as a pre-requisite,
-and requires it at C<use> time, you can blindly call
-those functions in code that uses L<MRO::Compat>.
-Under 5.9.5+ with L<MRO::Compat>, your calls to those
-functions will become a no-op and everything will work fine.
+C<Class::C3::initialize()>, C<Class::C3::reinitialize()>, and/or
+C<Class::C3::uninitialize()> at the appropriate times
+as documented in the L<Class::C3> docs.  These three functions
+are always provided by L<MRO::Compat>, either via L<Class::C3>
+itself on older Perls, or directly as no-ops on 5.9.5+.
 
 =head1 SEE ALSO
 
