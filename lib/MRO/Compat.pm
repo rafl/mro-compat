@@ -14,7 +14,7 @@ BEGIN {
     if($] < 5.009_005) {
         $mro::VERSION # to fool Module::Install when generating META.yml
             = $VERSION;
-        $INC{'mro.pm'} = 'Faked by MRO::Compat';
+        $INC{'mro.pm'} = __FILE__;
         *mro::import            = \&__import;
         *mro::get_linear_isa    = \&__get_linear_isa;
         *mro::set_mro           = \&__set_mro;
