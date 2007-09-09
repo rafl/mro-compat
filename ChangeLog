@@ -1,5 +1,8 @@
 Revision history for Perl extension MRO::Compat.
 
+0.05 - Sun Sept 9, 2007
+    - Fix for RT#28661 (ill-formated %INC filenames aren't nice)
+
 0.04 - Wed July 18, 2007
     - Removed doc warning now that 5.9.5 is out
     - Stopped the code from assuming valid classnames
