@@ -227,7 +227,7 @@ sub __get_all_pkgs_with_isas {
     my $search = shift;
     my $pfx;
     my $isa;
-    if($search) {
+    if(defined $search) {
         $isa = \@{"$search\::ISA"};
         $pfx = "$search\::";
     }
