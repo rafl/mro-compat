@@ -1,5 +1,10 @@
 Revision history for Perl extension MRO::Compat.
 
+0.06_01 - Mon May 19, 2008
+    - Fix for false classnames in mro::get_isarev, I guess
+      I missed an instance during the 0.04 fixes.
+      (reported by Daniel Austin)
+
 0.05 - Sun Sept 9, 2007
     - Fix for RT#28661 (ill-formated %INC filenames aren't nice)
 
