@@ -1,5 +1,9 @@
 Revision history for Perl extension MRO::Compat.
 
+0.07 - Tue May 20, 2008
+    - Add explicit dependency on perl 5.6.0 or higher
+      in Makefile.PL + META.yml
+
 0.06_01 - Mon May 19, 2008
     - Fix for false classnames in mro::get_isarev, I guess
       I missed an instance during the 0.04 fixes.

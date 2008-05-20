@@ -5,7 +5,7 @@ require 5.006_000;
 
 # Keep this < 1.00, so people can tell the fake
 #  mro.pm from the real one
-our $VERSION = '0.06_01';
+our $VERSION = '0.07';
 
 BEGIN {
     # Alias our private functions over to
