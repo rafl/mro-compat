@@ -170,22 +170,25 @@ section for additional details.
 
 sub __set_mro {
     my ($classname, $type) = @_;
+
     if(!defined $classname || !$type) {
         die q{Usage: mro::set_mro($classname, $type)};
     }
+
     if($type eq 'c3') {
         eval "package $classname; use Class::C3";
         die $@ if $@;
     }
-    if($type ne 'dfs') {
-        die q{Invalid mro type "$type"};
+    elsif($type eq 'dfs') {
+        # In the dfs case, check whether we need to undo C3
+        if(defined $Class::C3::MRO{$classname}) {
+            Class::C3::_remove_method_dispatch_table($classname);
+        }
+        delete $Class::C3::MRO{$classname};
     }
-
-    # In the dfs case, check whether we need to undo C3
-    if(defined $Class::C3::MRO{$classname}) {
-        Class::C3::_remove_method_dispatch_table($classname);
+    else {
+        die qq{Invalid mro type "$type"};
     }
-    delete $Class::C3::MRO{$classname};
 
     return;
 }
