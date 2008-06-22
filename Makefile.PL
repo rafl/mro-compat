@@ -1,4 +1,4 @@
-use inc::Module::Install 0.65;
+use inc::Module::Install 0.75;
 
 name          'MRO-Compat';
 all_from      'lib/MRO/Compat.pm';
