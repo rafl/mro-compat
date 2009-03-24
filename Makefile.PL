@@ -15,5 +15,4 @@ if($] < 5.009_005) {
 system("pod2text lib/MRO/Compat.pm >README") if -e 'MANIFEST.SKIP';
 
 auto_provides;
-auto_install;
 WriteAll;
