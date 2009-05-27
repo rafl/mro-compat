@@ -8,7 +8,7 @@ test_requires 'Test::More' => '0.47';
 
 if($] < 5.009_005) {
     feature  'XS Speedups', 'Class::C3::XS' => '0.08';
-    requires 'Class::C3' => '0.19';
+    requires 'Class::C3' => '0.20';
 }
 
 # Rebuild README for maintainers
