@@ -1,5 +1,9 @@
 Revision history for Perl extension MRO::Compat.
 
+0.11 - Wed May 27, 2009
+    - Fix misspelled docs for get_isarev. Closes RT#46401.
+    - Bump optional prereq on Class::C3 to 0.20.
+
 0.10 - Wed Mar 25, 2009
     - Remove the fake Build.PL. Module::Install doesn't support that anymore.
       (Florian Ragwitz)
